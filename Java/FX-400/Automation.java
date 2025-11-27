@@ -65,7 +65,7 @@ public class Automation implements NativeKeyListener{
                         case NativeKeyEvent.VC_F4: //Flexnet will want higher (2+ enter delay strength)
                             bot = new Flexnet();
                             break;
-                    }  
+                    }
                 }
                 
                 if(!bot.isAlive()) {

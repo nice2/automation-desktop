@@ -1,4 +1,4 @@
-var STARTING_NUMBER = 20; //Starting number for each color
+var STARTING_NUMBER = 1; //Starting number for each color
 var MARKER_SIZE = 18; //Text size of the created marking
 var USE_RECTANGLES = false; //Count rectangles instead of circles
 // Press CTRL+J to open debugger, paste everything, CTRL+A to select all, CTRL+Enter to run
