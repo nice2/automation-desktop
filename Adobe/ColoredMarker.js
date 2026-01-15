@@ -1,7 +1,7 @@
 var STARTING_NUMBER = 1; //Starting number for each color
 var MARKER_SIZE = 18; //Text size of the created marking
 var USE_RECTANGLES = false; //Count rectangles instead of circles
-var MARK_BORDERS_ONLY = false; //Marks based off border color instead of the main color
+var MARK_USING_BORDERS = false; //Marks based off border color instead of the main color
 // Press CTRL+J to open debugger, paste everything, CTRL+A to select all, CTRL+Enter to run
 
 //Get all colored circles and assign a number next to each of them
@@ -31,8 +31,8 @@ for(var i = 0; i < pages.length; i++) {
         if(checkAnnotType(annot)) {
 
             var color = annot.fillColor.toString();
-            
-            if(MARK_BORDERS_ONLY) {
+
+            if(MARK_USING_BORDERS) {
                 color = annot.strokeColor.toString();
             }
 
@@ -56,6 +56,10 @@ function checkAnnotType(annot) {
 function addColoredNumber(annot, num) {   
     // Get the current position of the annotation (as a rectangle: [x1, y1, x2, y2])
     var rect = annot.rect;
+    var used_color = annot.fillColor;
+    if(MARK_USING_BORDERS) {
+        used_color = annot.strokeColor;
+    }
 
     // Calculate position 6 pixels above the center of the annot
     var xPos = (rect[0] + rect[2]) / 2; // X center
@@ -70,7 +74,7 @@ function addColoredNumber(annot, num) {
         author: "Automated Script",      // Optional: Author name
         fillColor : color.transparent,
         opacity : 1,
-        strokeColor : annot.fillColor,
+        strokeColor : used_color,
     });
 
 
@@ -78,7 +82,7 @@ function addColoredNumber(annot, num) {
     if (newAnnot.richContents) {
         var spans = [];
         for each(var span in newAnnot.richContents) {
-            span.textColor = annot.fillColor;
+            span.textColor = used_color;
             span.textSize = MARKER_SIZE;
             spans.push(span);
         }
