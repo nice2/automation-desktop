@@ -1,6 +1,7 @@
-var STARTING_NUMBER = 20; //Starting number for each color
+var STARTING_NUMBER = 1; //Starting number for each color
 var MARKER_SIZE = 18; //Text size of the created marking
 var USE_RECTANGLES = false; //Count rectangles instead of circles
+var MARK_BORDERS_ONLY = false; //Marks based off border color instead of the main color
 // Press CTRL+J to open debugger, paste everything, CTRL+A to select all, CTRL+Enter to run
 
 //Get all colored circles and assign a number next to each of them
@@ -28,12 +29,19 @@ for (var i = 0; i < annots.length; i++) {
 for(var i = 0; i < pages.length; i++) {
     pages[i].forEach(function(annot) {
         if(checkAnnotType(annot)) {
-            if(color_count[annot.fillColor.toString()] == null) {
-                color_count[annot.fillColor.toString()] = STARTING_NUMBER;             
+
+            var color = annot.fillColor.toString();
+            
+            if(MARK_BORDERS_ONLY) {
+                color = annot.strokeColor.toString();
             }
 
-            addColoredNumber(annot, color_count[annot.fillColor.toString()]);
-            color_count[annot.fillColor.toString()]++;
+            if(color_count[color] == null) {
+                color_count[color] = STARTING_NUMBER;             
+            }
+
+            addColoredNumber(annot, color_count[color]);
+            color_count[color]++;
         }
     });
 }
