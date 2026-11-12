@@ -126,33 +126,29 @@ public class FX4000 extends ConfigBot{
         }
     }
     
+    //Each add method only presses the keys that pick the device type in the insert dialog.
+    //insertWith (ConfigBot) handles opening the dialog, moving to the address, confirming and backing out.
+
     //smoke
     protected void addPhotoDetector() {
-        open();
-        bot.pressKey(KeyEvent.VK_UP);
-        bot.pressKey(KeyEvent.VK_TAB, 4);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_UP);
+            bot.pressKey(KeyEvent.VK_TAB, 4);
+        });
     }
 
     //Pull station
     protected void addAlarmInputMod() {
-        open();
-        bot.pressKey(KeyEvent.VK_M);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_M);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+        });
     }
 
     //Dual monitor, alarm
     protected void addDualAlarmInputMod() {
-        open();
         /*
         if(AP_START > 1) {
             bot.pressKey(KeyEvent.VK_D, 5);
@@ -161,64 +157,50 @@ public class FX4000 extends ConfigBot{
             bot.pressKey(KeyEvent.VK_D, 2);
         }
         */
-       bot.pressKey(KeyEvent.VK_D, 2);
-
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5));
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5), () -> {
+            bot.pressKey(KeyEvent.VK_D, 2);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+        });
     }
 
     //Mini monitor, alarm
     protected void addAlarmInputMiniMod() {
-        open();
-        bot.pressKey(KeyEvent.VK_M);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_M);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+        });
     }
 
     //monitor, non-latch
     protected void addNonLatchedSupv() {
-        open();
-        bot.pressKey(KeyEvent.VK_M, 2);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_M, 2);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+        });
     }
 
     //mini monitor, non latch
     protected void addNonLatchedSupvMini() {
-        open();
-        bot.pressKey(KeyEvent.VK_M);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_M);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+        });
     }
-
 
     //dual monitor
     protected void addDualNonLatchedSupv() {
-        open();
         /*
         if(AP_START > 1) {
             bot.pressKey(KeyEvent.VK_D, 5);
@@ -227,36 +209,30 @@ public class FX4000 extends ConfigBot{
             bot.pressKey(KeyEvent.VK_D, 3);
         }
         */
-        bot.pressKey(KeyEvent.VK_D, 2);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5));
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5), () -> {
+            bot.pressKey(KeyEvent.VK_D, 2);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+        });
     }
 
     //mini monitor, latched supv
     protected void addLatchedSupv() {
-        open();
-        bot.pressKey(KeyEvent.VK_M);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_L);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_M);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_L);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+        });
     }
 
     //heat
     protected void addHeatDetector() {
-        open();
         /*
         if(AP_START > 1) {
             bot.pressKey(KeyEvent.VK_H, 2);
@@ -265,17 +241,14 @@ public class FX4000 extends ConfigBot{
             bot.pressKey(KeyEvent.VK_H);
         }
         */
-       bot.pressKey(KeyEvent.VK_H, 2);
-        bot.pressKey(KeyEvent.VK_TAB, 4);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_H, 2);
+            bot.pressKey(KeyEvent.VK_TAB, 4);
+        });
     }
 
     //dual heat
     protected void addDualHeatSmokeDetector() {
-        open();
         /*
         if(AP_START > 1) {
             bot.pressKey(KeyEvent.VK_D, 6);
@@ -284,17 +257,15 @@ public class FX4000 extends ConfigBot{
             bot.pressKey(KeyEvent.VK_D, 4);
         }
         */
-       bot.pressKey(KeyEvent.VK_H, 9);
-        bot.pressKey(KeyEvent.VK_TAB, 4);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , Math.max(DEVICE_INSERT_DELAY_STRENGTH, 3)); //needs extra time for three address devices
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        //needs extra time for three address devices
+        insertWith(Math.max(DEVICE_INSERT_DELAY_STRENGTH, 3), () -> {
+            bot.pressKey(KeyEvent.VK_H, 9);
+            bot.pressKey(KeyEvent.VK_TAB, 4);
+        });
     }
 
     //relay
     protected void addRelay() {
-        open();
         /*
         if(AP_START > 1) {
             bot.pressKey(KeyEvent.VK_R, 2);
@@ -302,48 +273,37 @@ public class FX4000 extends ConfigBot{
         else {
             bot.pressKey(KeyEvent.VK_R);
         }
-            */
-        bot.pressKey(KeyEvent.VK_R);
-        bot.pressKey(KeyEvent.VK_TAB, 3);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5));
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        */
+        insertWith(Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5), () -> {
+            bot.pressKey(KeyEvent.VK_R);
+            bot.pressKey(KeyEvent.VK_TAB, 3);
+        });
     }
 
     //firephone
     protected void addTelephoneModule() {
-        open();
-        bot.pressKey(KeyEvent.VK_F, 3);
-        bot.pressKey(KeyEvent.VK_TAB, 3);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1, DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_F, 3);
+            bot.pressKey(KeyEvent.VK_TAB, 3);
+        });
     }
 
     //control
     protected void addSpeakers() {
-        open();
-        bot.pressKey(KeyEvent.VK_C, 2);
-        bot.pressKey(KeyEvent.VK_TAB, 3);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1, DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_C, 2);
+            bot.pressKey(KeyEvent.VK_TAB, 3);
+        });
     }
 
     //photo co
     protected void addSmokeCODetector() {
-        open();
-        bot.pressKey(KeyEvent.VK_F);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_S);
-        bot.pressKey(KeyEvent.VK_TAB, 3);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1, Math.max(DEVICE_INSERT_DELAY_STRENGTH, 2));
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(Math.max(DEVICE_INSERT_DELAY_STRENGTH, 2), () -> {
+            bot.pressKey(KeyEvent.VK_F);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_S);
+            bot.pressKey(KeyEvent.VK_TAB, 3);
+        });
     }
 
     protected void insertDevice(Zone zone) {
