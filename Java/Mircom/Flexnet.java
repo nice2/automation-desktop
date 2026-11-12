@@ -129,198 +129,157 @@ public class Flexnet extends ConfigBot{
     }
     
     protected void addPhotoDetector() {
-        open();
-        bot.pressKey(KeyEvent.VK_P);
-        bot.pressKey(KeyEvent.VK_TAB, 3);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_P);
+            bot.pressKey(KeyEvent.VK_TAB, 3);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+        });
     }
 
     protected void addAlarmInputMod() {
-        open();
-        bot.pressKey(KeyEvent.VK_M);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_M);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+        });
     }
 
     //Meant for Monitor only waterflow/valve
     protected void addDualAlarmInputMod() {
-        open();
-        if(AP_START > 1) {
-            bot.pressKey(KeyEvent.VK_D, 5);
-        } 
-        else {
-            bot.pressKey(KeyEvent.VK_D, 3);
-        }
+        insertWith(Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5), () -> {
+            if(AP_START > 1) {
+                bot.pressKey(KeyEvent.VK_D, 5);
+            } 
+            else {
+                bot.pressKey(KeyEvent.VK_D, 3);
+            }
 
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5));
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+        });
     }
 
     protected void addAlarmInputMiniMod() {
-        open();
-        bot.pressKey(KeyEvent.VK_M, 2);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_M, 2);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+        });
     }
 
     protected void addNonLatchedSupv() {
-        open();
-        bot.pressKey(KeyEvent.VK_M);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_M);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+        });
     }
 
     protected void addNonLatchedSupvMini() {
-        open();
-        bot.pressKey(KeyEvent.VK_M, 2);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_M, 2);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+        });
     }
 
     protected void addDualNonLatchedSupv() {
-        open();
-        if(AP_START > 1) {
-            bot.pressKey(KeyEvent.VK_D, 5);
-        }
-        else {
-            bot.pressKey(KeyEvent.VK_D, 3);
-        }
-        
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5));
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5), () -> {
+            if(AP_START > 1) {
+                bot.pressKey(KeyEvent.VK_D, 5);
+            }
+            else {
+                bot.pressKey(KeyEvent.VK_D, 3);
+            }
+
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+        });
     }
 
     protected void addLatchedSupv() {
-        open();
-        bot.pressKey(KeyEvent.VK_M, 2);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_L);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_M, 2);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_L);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+        });
     }
 
     protected void addHeatDetector() {
-        open();
-        if(AP_START > 1) {
-            bot.pressKey(KeyEvent.VK_H, 2);
-        }
-        else {
-            bot.pressKey(KeyEvent.VK_H);
-        }
-        
-        bot.pressKey(KeyEvent.VK_TAB, 5);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            if(AP_START > 1) {
+                bot.pressKey(KeyEvent.VK_H, 2);
+            }
+            else {
+                bot.pressKey(KeyEvent.VK_H);
+            }
+
+            bot.pressKey(KeyEvent.VK_TAB, 5);
+        });
     }
 
     protected void addDualHeatSmokeDetector() {
-        open();
-        if(AP_START > 1) {
-            bot.pressKey(KeyEvent.VK_D, 6);
-        }
-        else {
-            bot.pressKey(KeyEvent.VK_D, 4);
-        }
-        bot.pressKey(KeyEvent.VK_TAB, 5);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , Math.max(DEVICE_INSERT_DELAY_STRENGTH, 2)); //needs extra time for three address devices
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        //needs extra time for three address devices
+        insertWith(Math.max(DEVICE_INSERT_DELAY_STRENGTH, 2), () -> {
+            if(AP_START > 1) {
+                bot.pressKey(KeyEvent.VK_D, 6);
+            }
+            else {
+                bot.pressKey(KeyEvent.VK_D, 4);
+            }
+            bot.pressKey(KeyEvent.VK_TAB, 5);
+        });
     }
 
     protected void addRelay() {
-        open();
-        if(AP_START > 1) {
-            bot.pressKey(KeyEvent.VK_R, 2);
-        }
-        else {
-            bot.pressKey(KeyEvent.VK_R);
-        }
-        bot.pressKey(KeyEvent.VK_TAB, 4);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5));
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(Math.max(DEVICE_INSERT_DELAY_STRENGTH, 1.5), () -> {
+            if(AP_START > 1) {
+                bot.pressKey(KeyEvent.VK_R, 2);
+            }
+            else {
+                bot.pressKey(KeyEvent.VK_R);
+            }
+            bot.pressKey(KeyEvent.VK_TAB, 4);
+        });
     }
 
     protected void addTelephoneModule() {
-        open();
-        bot.pressKey(KeyEvent.VK_F);
-        bot.pressKey(KeyEvent.VK_TAB, 3);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1, DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_F);
+            bot.pressKey(KeyEvent.VK_TAB, 3);
+        });
     }
 
     protected void addSpeakers() {
-        open();
-        bot.pressKey(KeyEvent.VK_C, 2);
-        bot.pressKey(KeyEvent.VK_TAB, 4);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1, DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_C, 2);
+            bot.pressKey(KeyEvent.VK_TAB, 4);
+        });
     }
 
     protected void addSmokeCODetector() {
-        open();
-        bot.pressKey(KeyEvent.VK_F, 2);
-        bot.pressKey(KeyEvent.VK_TAB);
-        bot.pressKey(KeyEvent.VK_A);
-        bot.pressKey(KeyEvent.VK_TAB, 4);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1, Math.max(DEVICE_INSERT_DELAY_STRENGTH, 2));
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(Math.max(DEVICE_INSERT_DELAY_STRENGTH, 2), () -> {
+            bot.pressKey(KeyEvent.VK_F, 2);
+            bot.pressKey(KeyEvent.VK_TAB);
+            bot.pressKey(KeyEvent.VK_A);
+            bot.pressKey(KeyEvent.VK_TAB, 4);
+        });
     }
 
     protected void insertDevice(Zone zone) {

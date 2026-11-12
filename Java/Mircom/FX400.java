@@ -85,105 +85,77 @@ public class FX400 extends ConfigBot{
     }
 
     protected void addPhotoDetector() {
-        open();
+        insertWith(() -> {
+            //For MIX-4011
+            //bot.pressKey(KeyEvent.VK_UP, 1);
 
-        //For MIX-4011
-        //bot.pressKey(KeyEvent.VK_UP, 1);
-
-        //MIX-4010 is the default
-        bot.pressKey(KeyEvent.VK_TAB, 3);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+            //MIX-4010 is the default
+            bot.pressKey(KeyEvent.VK_TAB, 3);
+        });
     }
 
     protected void addDuctDetector() {
-        open();
-        bot.pressKey(KeyEvent.VK_P, 5);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_P, 5);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+        });
     }
 
     protected void addAlarmInputMod() {
-        open();
-        bot.pressKey(KeyEvent.VK_D, 2);
-        bot.pressKey(KeyEvent.VK_TAB, 3);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_D, 2);
+            bot.pressKey(KeyEvent.VK_TAB, 3);
+        });
     }
 
     protected void addNonLatchedSupv() {
-        open();
-        bot.pressKey(KeyEvent.VK_D, 2);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        bot.pressKey(KeyEvent.VK_N);
-        bot.pressKey(KeyEvent.VK_TAB);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_D, 2);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+            bot.pressKey(KeyEvent.VK_N);
+            bot.pressKey(KeyEvent.VK_TAB);
+        });
     }
 
     protected void addLatchedSupv() {
-        open();
-        bot.pressKey(KeyEvent.VK_D,2);
-        bot.pressKey(KeyEvent.VK_TAB,2);
-        bot.pressKey(KeyEvent.VK_L);
-        bot.pressKey(KeyEvent.VK_TAB);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_D,2);
+            bot.pressKey(KeyEvent.VK_TAB,2);
+            bot.pressKey(KeyEvent.VK_L);
+            bot.pressKey(KeyEvent.VK_TAB);
+        });
     }
 
     protected void addHeatDetector() {
-        open();
-        bot.pressKey(KeyEvent.VK_H,3);
-        bot.pressKey(KeyEvent.VK_TAB,3);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_H,3);
+            bot.pressKey(KeyEvent.VK_TAB,3);
+        });
     }
 
     protected void addAlarmInputClassA() {
-        open();
-        bot.pressKey(KeyEvent.VK_D, 2);
-        bot.pressKey(KeyEvent.VK_TAB, 1);
-        bot.pressKey(KeyEvent.VK_C, 1);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_D, 2);
+            bot.pressKey(KeyEvent.VK_TAB, 1);
+            bot.pressKey(KeyEvent.VK_C, 1);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+        });
     }
 
     protected void addRelay() {
-        open();
-        bot.pressKey(KeyEvent.VK_D);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_D);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+        });
     }
 
     protected void addTroubleInput() {
-         open();
-        bot.pressKey(KeyEvent.VK_D, 2);
-        bot.pressKey(KeyEvent.VK_TAB, 2);
-        bot.pressKey(KeyEvent.VK_T);
-        bot.pressKey(KeyEvent.VK_TAB);
-        skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_INSERT_DELAY_STRENGTH);
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_END);
+        insertWith(() -> {
+            bot.pressKey(KeyEvent.VK_D, 2);
+            bot.pressKey(KeyEvent.VK_TAB, 2);
+            bot.pressKey(KeyEvent.VK_T);
+            bot.pressKey(KeyEvent.VK_TAB);
+        });
     }
 
     protected void insertDevice(Zone zone){
