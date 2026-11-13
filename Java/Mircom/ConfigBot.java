@@ -61,6 +61,16 @@ public abstract class ConfigBot extends Thread implements DataEntryBot.PauseHand
     private boolean skipping_rows = false;
     protected boolean inserted_this_run = false; //true once the insert pass has run, so the update pass knows to jump to the top
 
+    //Pause button: honoured between devices, never partway through one
+    private volatile boolean pause_requested = false;
+
+    //Redo tracking for a device interrupted by focus loss
+    private boolean insert_committed = false; //the insert's confirming Enter was sent
+    private int rows_completed = 0; //rows of the current device fully entered (their final Down was sent)
+    private int rows_to_pass = 0; //on a redo, rows already done that are passed over without keys
+    private int row_index = 0;
+    private static final int MAX_REDOS = 3;
+
     public ConfigBot() {
         try {
             readSettings();
@@ -202,9 +212,7 @@ public abstract class ConfigBot extends Thread implements DataEntryBot.PauseHand
                 insertDevices(zone_list);
 
                 //Additional delay to ensure final device is added
-                if(!WAIT_FOR_READY) {
-                    Thread.sleep(DELAY);
-                }
+                stepPause();
             }
             else {
                 System.out.println("Skipping device insertion.");
@@ -245,8 +253,35 @@ public abstract class ConfigBot extends Thread implements DataEntryBot.PauseHand
             return; //before the start point - already in the configurator
         }
 
+        safePoint();
         report(Phase.INSERT, index, zone);
-        insertDevice(zone);
+
+        for(int attempt = 1; is_running; attempt++) {
+            bot.beginStep();
+            insert_committed = false;
+            insertDevice(zone);
+
+            if(!bot.consumeAborted()) {
+                return;
+            }
+
+            if(insert_committed) {
+                //The insert was already confirmed - just close the dialog and move to the end like a normal insert
+                System.out.println("Device was already added before the interruption. Finishing it.");
+                recover(KeyEvent.VK_ESCAPE, KeyEvent.VK_END);
+                return;
+            }
+
+            if(attempt >= MAX_REDOS) {
+                System.out.println("Interrupted " + attempt + " times on this device. Stopping - press Start to try it again.");
+                setIsRunning(false);
+                return;
+            }
+
+            //Back out of any menu/dialog the interrupted attempt left open, then insert it again
+            System.out.println("Redoing: " + zone.getZoneinfo());
+            recover(KeyEvent.VK_ESCAPE, KeyEvent.VK_ESCAPE, KeyEvent.VK_END);
+        }
     }
 
     //Every device in the update pass goes through here
@@ -272,8 +307,73 @@ public abstract class ConfigBot extends Thread implements DataEntryBot.PauseHand
             return;
         }
 
+        safePoint();
         report(Phase.UPDATE, index, zone);
-        updateZone(zone);
+
+        rows_completed = 0;
+        try {
+            for(int attempt = 1; is_running; attempt++) {
+                bot.beginStep();
+                rows_to_pass = rows_completed; //rows finished before an interruption aren't entered again
+                row_index = 0;
+                updateZone(zone);
+
+                if(!bot.consumeAborted()) {
+                    return;
+                }
+
+                if(attempt >= MAX_REDOS) {
+                    System.out.println("Interrupted " + attempt + " times on this device. Stopping - press Start to try it again.");
+                    setIsRunning(false);
+                    return;
+                }
+
+                //Cancel any half-finished edit; the cursor is still on the interrupted row
+                System.out.println("Redoing row " + (rows_completed + 1) + " of: " + zone.getZoneinfo());
+                recover(KeyEvent.VK_ESCAPE);
+            }
+        } finally {
+            rows_to_pass = 0;
+        }
+    }
+
+    //Pause here (between devices) if the Pause button was pressed
+    private void safePoint() {
+        if(!pause_requested || !is_running) {
+            return;
+        }
+
+        pause_requested = false;
+        System.out.println("Paused between devices. Don't change the selected row in the configurator while paused.");
+        setIsPaused(true);
+        while(is_paused && is_running) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
+        if(is_running) {
+            System.out.println("Resumed.");
+        }
+    }
+
+    //Ask the bot to pause once the current device is finished
+    public void requestPause() {
+        pause_requested = true;
+    }
+
+    public boolean isPauseRequested() {
+        return pause_requested;
+    }
+
+    //Keys that put the configurator back into a known state after an interruption
+    private void recover(int... keys) {
+        bot.beginStep();
+        for(int key : keys) {
+            bot.pressKey(key);
+        }
+        bot.consumeAborted();
     }
 
     private void report(Phase phase, int index, Zone zone) {
@@ -283,18 +383,46 @@ public abstract class ConfigBot extends Thread implements DataEntryBot.PauseHand
         }
     }
 
-    //Call at the top of updateRow. When skipping rows before the start point, moves down a row and returns true.
+    //Call at the top of updateRow. Returns true if this row should not be entered:
+    //before the start point (moves down a row), or already finished before an interruption (no keys).
     protected boolean skipRow() {
         if(skipping_rows) {
-            bot.pressKey(KeyEvent.VK_DOWN);
+            //Keep pressing until the Down actually goes through, so an interruption can't throw the row count off
+            for(int attempt = 0; attempt < MAX_REDOS && is_running; attempt++) {
+                bot.beginStep();
+                boolean sent = bot.pressKey(KeyEvent.VK_DOWN);
+                bot.consumeAborted();
+                if(sent) {
+                    break;
+                }
+            }
             return true;
         }
+
+        if(row_index < rows_to_pass) {
+            row_index++;
+            return true;
+        }
+
+        row_index++;
         return false;
     }
 
-    //The old fixed pause before each step. Not needed when the ready check is on.
+    //Call at the end of updateRow: leave the row and move to the next one
+    protected void finishRow() {
+        bot.pressKey(KeyEvent.VK_ESCAPE);
+        if(bot.pressKey(KeyEvent.VK_DOWN)) {
+            rows_completed++;
+        }
+    }
+
+    //Pause before each step. Some configurators (FX-400) ignore Enter if it comes right after moving to a
+    //new row, so this waits until the configurator has been idle for delayTime (a plain sleep without the ready check).
     protected void stepPause() throws InterruptedException {
-        if(!WAIT_FOR_READY) {
+        if(WAIT_FOR_READY) {
+            bot.settle(DELAY);
+        }
+        else {
             Thread.sleep(DELAY);
         }
     }
@@ -305,7 +433,9 @@ public abstract class ConfigBot extends Thread implements DataEntryBot.PauseHand
         open();
         chooseType.run();
         skipDevices();
-        bot.pressKey(KeyEvent.VK_ENTER, 1, insert_delay_strength);
+        if(bot.pressKey(KeyEvent.VK_ENTER, 1, insert_delay_strength)) {
+            insert_committed = true;
+        }
         bot.pressKey(KeyEvent.VK_ESCAPE);
         bot.pressKey(KeyEvent.VK_END);
     }
@@ -365,8 +495,7 @@ public abstract class ConfigBot extends Thread implements DataEntryBot.PauseHand
             bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_UPDATE_DELAY_STRENGTH);
         }
 
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_DOWN);
+        finishRow();
     }
 
     protected abstract void updateZone(Zone zone);

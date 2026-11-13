@@ -40,6 +40,11 @@ public class DataEntryBot extends Robot {
     private volatile boolean stopped = false;
     private volatile boolean dry_run = false; //work out what would be typed without pressing anything
 
+    //Set when the configurator lost focus partway through a step. Focus loss can close menus/editors the
+    //step had opened, so the rest of the step is skipped and ConfigBot redoes it from a clean state.
+    private volatile boolean aborted = false;
+    private int keys_in_step = 0;
+
     //A ping slower than this means the configurator was busy, so the quiet window starts over
     private static final int BUSY_THRESHOLD_MS = 15;
 
@@ -83,6 +88,38 @@ public class DataEntryBot extends Robot {
         this.dry_run = dry_run;
     }
 
+    //Marks the start of a step (one device or one row) that can be redone if interrupted
+    public void beginStep() {
+        aborted = false;
+        keys_in_step = 0;
+    }
+
+    //Skip the rest of the current step so ConfigBot can redo it
+    protected void abortStep() {
+        aborted = true;
+    }
+
+    //True if the current step was interrupted and should be redone. Clears the flag.
+    public boolean consumeAborted() {
+        boolean was = aborted;
+        aborted = false;
+        return was;
+    }
+
+    //Wait until the configurator has been idle for ms (or just sleep when the ready check is off)
+    public void settle(int ms) {
+        if(stopped || dry_run || aborted) {
+            return;
+        }
+
+        if(ready_check) {
+            waitForReady(ms);
+        }
+        else {
+            this.delay(ms);
+        }
+    }
+
     //Only type into this window's program
     public void setTargetWindow(long hwnd) {
         main_window = hwnd;
@@ -105,45 +142,51 @@ public class DataEntryBot extends Robot {
         this.delay(300); //let the window finish activating before typing
     }
 
-    //Give key and press count, press and release key press count times, and multiply delay if provided
-    public void pressKey(int key, int press_count, double delay_strength)
+    //Give key and press count, press and release key press count times, and multiply delay if provided.
+    //Returns true if every press was sent (false if stopped or the step was interrupted first).
+    public boolean pressKey(int key, int press_count, double delay_strength)
     {
         try {
             for(int i = 0; i < press_count; i++) {
                 if(!beforeInput()) {
-                    return;
+                    return false;
                 }
 
                 this.keyPress(key);
                 this.keyRelease(key);
+                keys_in_step++;
 
                 afterInput(delay_strength);
             }
+            return true;
         }catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
 
-    public void pressKey(int key, int press_count) {
-        pressKey(key, press_count, DELAY_STRENGTH);
+    public boolean pressKey(int key, int press_count) {
+        return pressKey(key, press_count, DELAY_STRENGTH);
     }
 
-    public void pressKey(int key) {
-        pressKey(key, 1, DELAY_STRENGTH);
+    public boolean pressKey(int key) {
+        return pressKey(key, 1, DELAY_STRENGTH);
     }
 
     //Press a key while holding a modifier, e.g. Shift+F10
-    public void pressCombo(int modifier, int key, double delay_strength) {
+    public boolean pressCombo(int modifier, int key, double delay_strength) {
         if(!beforeInput()) {
-            return;
+            return false;
         }
 
         this.keyPress(modifier);
         this.keyPress(key);
         this.keyRelease(key);
         this.keyRelease(modifier);
+        keys_in_step++;
 
         afterInput(delay_strength);
+        return true;
     }
 
     //Copies text to clipboard and simulates pasting it
@@ -161,6 +204,7 @@ public class DataEntryBot extends Robot {
         this.keyPress(KeyEvent.VK_V);
         this.keyRelease(KeyEvent.VK_V);
         this.keyRelease(KeyEvent.VK_CONTROL);
+        keys_in_step++;
 
         //Strength 1 = the old fixed delay. With the ready check on, this also makes sure the paste
         //is processed before the next pasteText overwrites the clipboard.
@@ -178,12 +222,13 @@ public class DataEntryBot extends Robot {
         this.keyRelease(KeyEvent.VK_A);
         this.keyPress(KeyEvent.VK_DELETE);
         this.keyRelease(KeyEvent.VK_DELETE);
+        keys_in_step++;
 
         afterInput(DELAY_STRENGTH);
     }
 
     //Another program can briefly hold the clipboard open, which makes setContents throw. Retry a few times.
-    private boolean setClipboard(String text) {
+    protected boolean setClipboard(String text) {
         StringSelection selection = new StringSelection(text);
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
@@ -200,17 +245,8 @@ public class DataEntryBot extends Robot {
 
     //Runs before every key press. Returns false if no input should be sent.
     private boolean beforeInput() {
-        if(stopped || dry_run) {
+        if(stopped || dry_run || aborted) {
             return false;
-        }
-
-        //Pause button: hold here until resumed
-        if(pause_handler != null && pause_handler.getIsPaused()) {
-            System.out.println("Paused.");
-            waitWhilePaused();
-            if(!stopped) {
-                System.out.println("Resumed.");
-            }
         }
 
         if(ready_check) {
@@ -218,7 +254,7 @@ public class DataEntryBot extends Robot {
             waitForReady(0);
         }
 
-        return !stopped;
+        return !stopped && !aborted;
     }
 
     //Runs after every key press
@@ -246,9 +282,18 @@ public class DataEntryBot extends Robot {
             MemorySegment window = Win32.foreground();
 
             if(!isTargetWindow(window)) {
+                boolean mid_step = keys_in_step > 0;
                 pause(target_pid == 0
                     ? "The configurator is not the active window, so there is nothing safe to type into."
-                    : "The configurator is no longer the active window.");
+                    : "The configurator is no longer the active window."
+                        + (mid_step ? " It lost focus partway through a step, so the bot will back out and redo that step when resumed." : ""));
+
+                if(mid_step && !stopped) {
+                    //Menus/editors the step opened may have closed - skip the rest of the step so it can be redone
+                    abortStep();
+                    return;
+                }
+
                 start = System.currentTimeMillis();
                 deadline = start + ready_timeout;
                 quiet_since = start;

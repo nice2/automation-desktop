@@ -145,8 +145,7 @@ public class FX2000 extends ConfigBot{
             bot.pressKey(KeyEvent.VK_A);
             bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_UPDATE_DELAY_STRENGTH);
         }
-        bot.pressKey(KeyEvent.VK_ESCAPE);
-        bot.pressKey(KeyEvent.VK_DOWN);
+        finishRow();
     }
 
     protected void updateZone(Zone zone) {
