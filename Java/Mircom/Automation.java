@@ -1,86 +1,66 @@
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
 import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.NativeHookException;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
 
-public class Automation implements NativeKeyListener{
+//Opens the bot window and keeps the old global hotkeys working:
+//F2 FX400, F3 FX2000, F4 Flexnet, F5 FX4000 start (or resume) with the configurator in front, ` stops the run.
+public class Automation implements NativeKeyListener {
 
-    private int START_DELAY = 0;
+    private static volatile BotWindow window;
 
-    private ConfigBot bot;
+    public static void main(String[] args) throws Exception {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ignored) {
+            //default look is fine
+        }
 
-    public static void main(String[] args){
+        SwingUtilities.invokeAndWait(() -> {
+            window = new BotWindow();
+            window.setVisible(true);
+        });
+
         //Register key presses
         try {
-			GlobalScreen.registerNativeHook();
-		}
-		catch (NativeHookException ex) {
-			System.err.println("There was a problem registering the native hook.");
-			System.err.println(ex.getMessage());
-
-			System.exit(1);
-		}
-
-        GlobalScreen.addNativeKeyListener(new Automation());
-
-        System.out.println("Program ready. Press F2 to start FX400, F3 to start FX2000, F4 to start Flexnet, F5 to start FX4000, ` to Exit anytime.");
+            Logger.getLogger(GlobalScreen.class.getPackage().getName()).setLevel(Level.WARNING);
+            GlobalScreen.registerNativeHook();
+            GlobalScreen.addNativeKeyListener(new Automation());
+            System.out.println("Program ready. Use the window, or with the configurator in front press F2 FX400, F3 FX2000, F4 Flexnet, F5 FX4000. ` stops a run.");
+        }
+        catch (NativeHookException ex) {
+            System.err.println("Hotkeys unavailable (" + ex.getMessage() + "). Use the window's buttons instead.");
+        }
     }
 
     public void nativeKeyPressed(NativeKeyEvent e) {
-        
-		if (e.getKeyCode() == NativeKeyEvent.VC_BACKQUOTE) {
-
-            //Closes the program completely - will have to restart it
-            try {
-                System.out.println("Exiting Program");
-                GlobalScreen.unregisterNativeHook();
-                System.exit(0);
-            } catch (NativeHookException nativeHookException) {
-                nativeHookException.printStackTrace();
-            }
-
-            /*
-            //Stops the data entry bot WITHOUT requiring a restart  - this will throw errors, may want to catch them properly
-            try {
-                System.out.println("Exiting Program");
-                fx400.interrupt();
-                fx400.setIsRunning(false);
-            } catch (Exception nativeHookException) {
-                nativeHookException.printStackTrace();
-            }
-            */
+        BotWindow w = window;
+        if(w == null) {
+            return;
         }
 
-        if (e.getKeyCode() == NativeKeyEvent.VC_F2 || e.getKeyCode() == NativeKeyEvent.VC_F3 || e.getKeyCode() == NativeKeyEvent.VC_F4 ||
-             e.getKeyCode() == NativeKeyEvent.VC_F5) {
-            try {
-                //Start a new thread only if it doesn't exist or is no longer alive
-                if(bot == null || (bot != null && !bot.isAlive())) {
-                    switch (e.getKeyCode()) {
-                        case NativeKeyEvent.VC_F2:
-                            bot = new FX400();
-                            break;
-                        case NativeKeyEvent.VC_F3:
-                            bot = new FX2000();
-                            break;
-                        case NativeKeyEvent.VC_F4:
-                            bot = new Flexnet();
-                            break;
-                        case NativeKeyEvent.VC_F5:
-                            bot = new FX4000();
-                            break;
-                    }  
-                }
-                
-                if(!bot.isAlive()) {
-                    Thread.sleep(START_DELAY);  
-                    bot.start();
-                }else if(bot.isAlive() && bot.getIsPaused()) {
-                    bot.setIsPaused(false);
-                }
-            } catch (Exception except) {
-                except.printStackTrace();
-            }
-        }        
-	}
+        switch (e.getKeyCode()) {
+            case NativeKeyEvent.VC_BACKQUOTE:
+                SwingUtilities.invokeLater(w::hotkeyStop);
+                break;
+            case NativeKeyEvent.VC_F2:
+                SwingUtilities.invokeLater(() -> w.hotkeyStart(BotWindow.Panel.FX_400));
+                break;
+            case NativeKeyEvent.VC_F3:
+                SwingUtilities.invokeLater(() -> w.hotkeyStart(BotWindow.Panel.FX_2000));
+                break;
+            case NativeKeyEvent.VC_F4:
+                SwingUtilities.invokeLater(() -> w.hotkeyStart(BotWindow.Panel.FLEXNET));
+                break;
+            case NativeKeyEvent.VC_F5:
+                SwingUtilities.invokeLater(() -> w.hotkeyStart(BotWindow.Panel.FX_4000));
+                break;
+        }
+    }
 }

@@ -9,15 +9,18 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_CHAR;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public class DataEntryBot extends Robot {
 
-    //Lets the bot pause whatever is driving it (ConfigBot) and wait for the user to press the start key again
+    //Lets the bot pause whatever is driving it (ConfigBot) and wait for the user to resume
     public interface PauseHandler {
         void setIsPaused(boolean status);
         boolean getIsPaused();
@@ -31,8 +34,11 @@ public class DataEntryBot extends Robot {
     private boolean ready_check = false;
     private int ready_timeout = 30000; //ms the configurator may stay busy before the bot pauses
     private PauseHandler pause_handler;
-    private long target_pid = 0; //process the bot is typing into, locked on the first key press
+    private volatile long target_pid = 0; //process the bot is typing into, locked on the first key press or set by setTargetWindow
+    private volatile long main_window = 0; //window picked in the GUI
+    private volatile long last_window = 0; //last configurator window (or dialog) the bot typed into
     private volatile boolean stopped = false;
+    private volatile boolean dry_run = false; //work out what would be typed without pressing anything
 
     //A ping slower than this means the configurator was busy, so the quiet window starts over
     private static final int BUSY_THRESHOLD_MS = 15;
@@ -47,10 +53,20 @@ public class DataEntryBot extends Robot {
         this.delay = delay;
     }
 
-    //Turn on the ready check. handler is paused when the configurator stays busy or loses focus.
-    public void enableReadyCheck(int ready_timeout, PauseHandler handler) {
+    //Turn on the ready check. The pause handler is paused when the configurator stays busy or loses focus.
+    public void enableReadyCheck(int ready_timeout) {
         this.ready_check = true;
         this.ready_timeout = ready_timeout;
+    }
+
+    //Kept for older callers
+    public void enableReadyCheck(int ready_timeout, PauseHandler handler) {
+        setPauseHandler(handler);
+        enableReadyCheck(ready_timeout);
+    }
+
+    //Pausing the handler (e.g. a Pause button) stops the bot before its next key press
+    public void setPauseHandler(PauseHandler handler) {
         this.pause_handler = handler;
     }
 
@@ -61,6 +77,32 @@ public class DataEntryBot extends Robot {
 
     public boolean isStopped() {
         return stopped;
+    }
+
+    public void setDryRun(boolean dry_run) {
+        this.dry_run = dry_run;
+    }
+
+    //Only type into this window's program
+    public void setTargetWindow(long hwnd) {
+        main_window = hwnd;
+        last_window = hwnd;
+        target_pid = Win32.pidOf(MemorySegment.ofAddress(hwnd));
+    }
+
+    //Bring the configurator back to the front, ideally the exact window (dialog) the bot was typing into
+    public void focusTarget() {
+        long hwnd = Win32.isWindow(last_window) ? last_window : main_window;
+        if(hwnd == 0 || !Win32.isWindow(hwnd)) {
+            return;
+        }
+
+        if(target_pid != 0 && Win32.pidOf(Win32.foreground()) == target_pid) {
+            return; //already in front
+        }
+
+        Win32.bringToFront(hwnd);
+        this.delay(300); //let the window finish activating before typing
     }
 
     //Give key and press count, press and release key press count times, and multiply delay if provided
@@ -158,8 +200,17 @@ public class DataEntryBot extends Robot {
 
     //Runs before every key press. Returns false if no input should be sent.
     private boolean beforeInput() {
-        if(stopped) {
+        if(stopped || dry_run) {
             return false;
+        }
+
+        //Pause button: hold here until resumed
+        if(pause_handler != null && pause_handler.getIsPaused()) {
+            System.out.println("Paused.");
+            waitWhilePaused();
+            if(!stopped) {
+                System.out.println("Resumed.");
+            }
         }
 
         if(ready_check) {
@@ -204,6 +255,8 @@ public class DataEntryBot extends Robot {
                 continue;
             }
 
+            last_window = window.address();
+
             long ping_start = System.currentTimeMillis();
             long remaining = deadline - ping_start;
 
@@ -246,7 +299,7 @@ public class DataEntryBot extends Robot {
         return pid == target_pid;
     }
 
-    private static String processName(long pid) {
+    static String processName(long pid) {
         return ProcessHandle.of(pid)
             .flatMap(p -> p.info().command())
             .map(cmd -> cmd.substring(Math.max(cmd.lastIndexOf('\\'), cmd.lastIndexOf('/')) + 1))
@@ -263,13 +316,48 @@ public class DataEntryBot extends Robot {
             return;
         }
 
-        System.out.println("Check the configurator, click back into it, then press the same F-key you started with to continue. Press ` to quit.");
+        System.out.println("Check the configurator, then press Resume (or click back into it and press the start F-key). Press ` or Stop to quit.");
         System.out.println("----------------------------------------------------------------");
 
         pause_handler.setIsPaused(true);
+        waitWhilePaused();
+    }
+
+    private void waitWhilePaused() {
         while(pause_handler.getIsPaused() && !stopped) {
             this.delay(100);
         }
+    }
+
+    //A top level window, for picking the configurator in the GUI
+    public record WindowInfo(long hwnd, long pid, String title, String process) {
+        @Override
+        public String toString() {
+            return title;
+        }
+    }
+
+    //Visible, titled, top level windows of other programs
+    public static List<WindowInfo> listWindows() {
+        List<WindowInfo> windows = new ArrayList<>();
+        long own_pid = ProcessHandle.current().pid();
+        long hwnd = 0;
+
+        while((hwnd = Win32.nextTopLevelWindow(hwnd)) != 0) {
+            if(!Win32.isVisible(hwnd) || Win32.hasOwner(hwnd)) {
+                continue;
+            }
+
+            String title = Win32.windowText(hwnd);
+            long pid = Win32.pidOf(MemorySegment.ofAddress(hwnd));
+            if(title.isBlank() || pid == own_pid) {
+                continue;
+            }
+
+            windows.add(new WindowInfo(hwnd, pid, title, processName(pid)));
+        }
+
+        return windows;
     }
 
     //Minimal Windows calls through Java's built in Foreign Function API (Java 22+), no extra jars needed
@@ -283,12 +371,34 @@ public class DataEntryBot extends Robot {
             FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
         private static final MethodHandle SEND_MESSAGE_TIMEOUT = function("SendMessageTimeoutW",
             FunctionDescriptor.of(JAVA_LONG, ADDRESS, JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT, ADDRESS));
+        private static final MethodHandle FIND_WINDOW_EX = function("FindWindowExW",
+            FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+        private static final MethodHandle GET_WINDOW_TEXT = function("GetWindowTextW",
+            FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT));
+        private static final MethodHandle IS_WINDOW_VISIBLE = function("IsWindowVisible",
+            FunctionDescriptor.of(JAVA_INT, ADDRESS));
+        private static final MethodHandle IS_WINDOW = function("IsWindow",
+            FunctionDescriptor.of(JAVA_INT, ADDRESS));
+        private static final MethodHandle IS_ICONIC = function("IsIconic",
+            FunctionDescriptor.of(JAVA_INT, ADDRESS));
+        private static final MethodHandle GET_WINDOW = function("GetWindow",
+            FunctionDescriptor.of(ADDRESS, ADDRESS, JAVA_INT));
+        private static final MethodHandle SHOW_WINDOW = function("ShowWindow",
+            FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT));
+        private static final MethodHandle SET_FOREGROUND_WINDOW = function("SetForegroundWindow",
+            FunctionDescriptor.of(JAVA_INT, ADDRESS));
 
         private static final int WM_NULL = 0x0000;
         private static final int SMTO_NORMAL = 0x0000; //not SMTO_ABORTIFHUNG: a long busy spell would count as hung and return early
+        private static final int GW_OWNER = 4;
+        private static final int SW_RESTORE = 9;
 
         private static MethodHandle function(String name, FunctionDescriptor descriptor) {
             return LINKER.downcallHandle(USER32.find(name).orElseThrow(), descriptor);
+        }
+
+        private static MemorySegment hwnd(long address) {
+            return MemorySegment.ofAddress(address);
         }
 
         static MemorySegment foreground() {
@@ -315,6 +425,71 @@ public class DataEntryBot extends Robot {
             try {
                 long result = (long) SEND_MESSAGE_TIMEOUT.invokeExact(window, WM_NULL, 0L, 0L, SMTO_NORMAL, timeout_ms, MemorySegment.NULL);
                 return result != 0;
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+        }
+
+        //Walks the top level windows: pass 0 to start, then the previous result. Returns 0 at the end.
+        static long nextTopLevelWindow(long after) {
+            try {
+                MemorySegment next = (MemorySegment) FIND_WINDOW_EX.invokeExact(MemorySegment.NULL, hwnd(after), MemorySegment.NULL, MemorySegment.NULL);
+                return next.address();
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+        }
+
+        static String windowText(long window) {
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment buffer = arena.allocate(JAVA_CHAR, 512);
+                int length = (int) GET_WINDOW_TEXT.invokeExact(hwnd(window), buffer, 512);
+                char[] chars = new char[Math.max(0, length)];
+                for(int i = 0; i < chars.length; i++) {
+                    chars[i] = buffer.getAtIndex(JAVA_CHAR, i);
+                }
+                return new String(chars);
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+        }
+
+        static boolean isVisible(long window) {
+            try {
+                return (int) IS_WINDOW_VISIBLE.invokeExact(hwnd(window)) != 0;
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+        }
+
+        static boolean isWindow(long window) {
+            if(window == 0) {
+                return false;
+            }
+            try {
+                return (int) IS_WINDOW.invokeExact(hwnd(window)) != 0;
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+        }
+
+        static boolean hasOwner(long window) {
+            try {
+                MemorySegment owner = (MemorySegment) GET_WINDOW.invokeExact(hwnd(window), GW_OWNER);
+                return owner.address() != 0;
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+        }
+
+        //Restores the window if minimized and brings it to the front.
+        //Windows only allows this while our own window is in front (e.g. right after a button click).
+        static boolean bringToFront(long window) {
+            try {
+                if((int) IS_ICONIC.invokeExact(hwnd(window)) != 0) {
+                    int ignored = (int) SHOW_WINDOW.invokeExact(hwnd(window), SW_RESTORE);
+                }
+                return (int) SET_FOREGROUND_WINDOW.invokeExact(hwnd(window)) != 0;
             } catch (Throwable t) {
                 throw new RuntimeException(t);
             }

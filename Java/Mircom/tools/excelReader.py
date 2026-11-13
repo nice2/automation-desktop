@@ -1,15 +1,26 @@
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
 import pandas as pd
 import os
+import sys
 
 #Change working path to this file's path
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
 
-Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-file_path = askopenfilename(filetypes=[("Worksheet Files", "*.xlsx *.csv")]) # show an "Open" dialog box and return the path to the selected file
+if len(sys.argv) > 1:
+    # Path passed in (e.g. from the bot window)
+    file_path = os.path.abspath(os.path.join(os.path.dirname(dname), sys.argv[1])) if not os.path.isabs(sys.argv[1]) else sys.argv[1]
+else:
+    from tkinter import Tk
+    from tkinter.filedialog import askopenfilename
+    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
+    file_path = askopenfilename(filetypes=[("Worksheet Files", "*.xlsx *.csv")]) # show an "Open" dialog box and return the path to the selected file
+
+if not file_path:
+    print("No file selected.")
+    sys.exit(1)
+
+print(f" * Reading {file_path}")
 
 raw_df = ""
 
@@ -85,3 +96,4 @@ check_column_headers(df)
 check_subaddresses(zoneColumn)
 
 df.to_csv('../assets/temp_zones.csv', index=False)
+print(f" * Saved {len(df)} rows to assets/temp_zones.csv")

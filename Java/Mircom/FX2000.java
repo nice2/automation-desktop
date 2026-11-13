@@ -1,99 +1,53 @@
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Collections;
 import java.awt.event.KeyEvent;
 
 public class FX2000 extends ConfigBot{
 
-    public void run() {
-        System.out.println("Starting FX2000 Data Entry");
-        try{
-            is_running = true;
-            is_paused = false;
+    protected String panelName() {
+        return "FX2000";
+    }
 
-            ZoneList zone_list = new ZoneList();
-            zone_list.readFile();
-            zone_list.displayZoneList();
-            organizeZones(zone_list);
+    protected void prepare(ZoneList zone_list) {
+        organizeZones(zone_list);
+    }
 
-            if(zone_list.CONTAINS_AR) {
-                is_paused = true;
-            }
+    protected List<String> requiredSettings(ZoneList zone_list) {
+        List<String> settings = new ArrayList<>();
+        if(zone_list.CONTAINS_AR) {
+            settings.add("Auxiliary Reset in Base Control/Annun. Idx 3");
+        }
+        return settings;
+    }
 
-            System.out.println("----------------------------------------------------------------");
-            if (validateZones(zone_list)) {
-                is_running = false;
-                System.out.println("----------------------------------------------------------------");
-                System.out.println("Errors found in zone list, please correct them and run again.");
-                System.out.println("----------------------------------------------------------------");
-            }
+    protected void insertDevices(ZoneList zone_list) {
+        Zone zone;
 
-            if(is_running) {
-                if(is_paused) {
-                    if(BYPASS_PAUSE) {
-                        is_paused = false;
-                    }else{
-                        System.out.println("The following settings need to be enabled for data entry:");
-                        if(zone_list.CONTAINS_AR) {
-                            System.out.println("Auxiliary Reset in Base Control/Annun. Idx 3");
-                        }
-                        System.out.println("Please make necessary changes and press F3 to continue.");
-                        System.out.println("----------------------------------------------------------------");
-                    }
+        if(!sensors.isEmpty()) {
+            zone = sensors.get(0);
+            skip_count = (int) zone.getAddress() - 1;
+
+            for(int current_zone = 0; current_zone < sensors.size() && is_running; current_zone++) {
+                zone = sensors.get(current_zone);
+                if(current_zone > 0) {
+                    skip_count += (int) zone.getAddress() - (int) sensors.get(current_zone - 1).getAddress() - 1;
                 }
-
-                while(is_paused) {
-                    Thread.sleep(DELAY); //Wait until start button pressed again
-                }
-
-                if(!SKIP_INSERT_DEVICES) {
-                    Zone zone;
-
-                    if(!sensors.isEmpty()) {
-                        zone = sensors.get(0);
-                        skip_count = (int) zone.getAddress() - 1;
-
-                        for(int current_zone = 0; current_zone < sensors.size() && is_running; current_zone++) {
-                            zone = sensors.get(current_zone);
-                            if(current_zone > 0) {
-                                skip_count += (int) zone.getAddress() - (int) sensors.get(current_zone - 1).getAddress() - 1;
-                            }
-                            insertDevice(zone);
-                        }
-                    }
-
-                    if(!modules.isEmpty()) {
-                        zone = modules.get(0);
-                        skip_count = (int) zone.getAddress() - 1 - 100;
-
-                        for(int current_zone = 0; current_zone < modules.size() && is_running; current_zone++) {
-                            zone = modules.get(current_zone);
-                            if(current_zone > 0) {
-                                skip_count += ((int) zone.getAddress() - 100) - ((int) modules.get(current_zone - 1).getAddress() - 100) - 1;
-                            }
-                            insertDevice(zone);
-                        }
-                    }
-
-                    //Additional delay to ensure final device is added
-                    Thread.sleep(DELAY);
-                }
-
-                if(SKIP_INSERT_DEVICES) {
-                    System.out.println("Skipping device insertion.");
-                }
-                
-                enterZoneList(zone_list);
-
-                System.out.println("FX2000 Entry Complete");
-                is_running = false;
-                System.exit(MAX_PRIORITY);
-            }
-            else {
-                System.out.println("FX2000 Entry did not run");
+                insertAt(zone);
             }
         }
-        catch(Exception e) {
-            e.printStackTrace();
+
+        if(!modules.isEmpty()) {
+            zone = modules.get(0);
+            skip_count = (int) zone.getAddress() - 1 - 100;
+
+            for(int current_zone = 0; current_zone < modules.size() && is_running; current_zone++) {
+                zone = modules.get(current_zone);
+                if(current_zone > 0) {
+                    skip_count += ((int) zone.getAddress() - 100) - ((int) modules.get(current_zone - 1).getAddress() - 100) - 1;
+                }
+                insertAt(zone);
+            }
         }
     }
     
@@ -173,6 +127,10 @@ public class FX2000 extends ConfigBot{
 
     @Override
     protected void updateRow(Zone zone) {
+        if(skipRow()) {
+            return;
+        }
+
         updateTags(zone);
 
         bot.pressKey(KeyEvent.VK_ENTER, 1 , DEVICE_UPDATE_DELAY_STRENGTH); //make up for not updating Type

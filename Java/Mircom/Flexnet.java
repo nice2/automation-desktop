@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Collections;
 import java.awt.event.KeyEvent;
 
@@ -7,124 +8,76 @@ public class Flexnet extends ConfigBot{
     private ArrayList<Zone> phones;  //phone devices
     private int AP_START = 1;
 
-    public void run() {
-        System.out.println("Starting Flexnet Data Entry");
-        try{
-            is_running = true;
-            is_paused = false;
+    protected String panelName() {
+        return "Flexnet";
+    }
 
-            ZoneList zone_list = new ZoneList();
-            zone_list.readFile();
-            zone_list.displayZoneList();
-            organizeZones(zone_list);
-            AP_START = zone_list.AP_START;
+    protected void prepare(ZoneList zone_list) {
+        organizeZones(zone_list);
+        AP_START = zone_list.AP_START;
+    }
 
-            if(zone_list.CONTAINS_AR || AP_START > 1 || zone_list.CONTAINS_DUAL_HEAT) {
-                is_paused = true;
+    protected List<String> requiredSettings(ZoneList zone_list) {
+        List<String> settings = new ArrayList<>();
+        if(zone_list.CONTAINS_AR || AP_START > 1 || zone_list.CONTAINS_DUAL_HEAT) {
+            if (zone_list.CONTAINS_DUAL_HEAT) {
+                settings.add("100F Dual Heat detector enabled");
             }
-
-            System.out.println("----------------------------------------------------------------");
-            if (validateZones(zone_list)) {
-                is_running = false;
-                System.out.println("----------------------------------------------------------------");
-                System.out.println("Errors found in zone list, please correct them and run again.");
-                System.out.println("----------------------------------------------------------------");
+            if(zone_list.CONTAINS_AR) {
+                settings.add("Auxiliary Reset in Base Control/Annun. Idx 3");
             }
-
-            if(is_running) {
-                if(is_paused) {
-                    if(BYPASS_PAUSE) {
-                        is_paused = false;
-                    }else{
-                        System.out.println("The following settings need to be enabled for data entry:");
-
-                        if (zone_list.CONTAINS_DUAL_HEAT) {
-                            System.out.println("100F Dual Heat detector enabled");
-                        }
-
-                        if(zone_list.CONTAINS_AR) {
-                            System.out.println("Auxiliary Reset in Base Control/Annun. Idx 3");
-                        }
-
-                        if(zone_list.CONTAINS_SPEAKERS) {
-                            System.out.println("Digital Audio and Digital Phone enabled");
-                        }
-
-                        if (zone_list.AP_START > 1) {
-                            System.out.println("AP Start to " + AP_START);
-                        }
-
-                        System.out.println("Please make necessary changes and press F4 to continue.");
-                        System.out.println("----------------------------------------------------------------");
-                    }
-                }
-
-                while(is_paused) {
-                    Thread.sleep(DELAY); //Wait until start button pressed again
-                }
-
-                if(!SKIP_INSERT_DEVICES) {
-                    Zone zone;
-
-                    //Add phones first if they exist
-                    if(!phones.isEmpty()) {
-                        zone = phones.get(0);
-                        skip_count = (int) zone.getAddress() - 100 - 1;
-
-                        for (int current_zone = 0; current_zone < phones.size() && is_running; current_zone++) {
-                            if(current_zone > 0) {
-                                skip_count += (int) zone.getAddress() - (int) phones.get(current_zone - 1).getAddress() - 1;
-                            }
-                            insertDevice(zone);
-                        }
-                    }
-
-                    if(!sensors.isEmpty()) {
-                        zone = sensors.get(0);
-                        skip_count = (int) zone.getAddress() - AP_START;
-
-                        for(int current_zone = 0; current_zone < sensors.size() && is_running; current_zone++) {
-                            zone = sensors.get(current_zone);
-                            if(current_zone > 0) {
-                                skip_count += (int) zone.getAddress() - (int) sensors.get(current_zone - 1).getAddress() - 1;
-                            }
-                            insertDevice(zone);
-                        }
-                    }
-
-                    if(!modules.isEmpty()) {
-                        zone = modules.get(0);
-                        skip_count = (int) zone.getAddress() - AP_START - 100;
-
-                        for(int current_zone = 0; current_zone < modules.size() && is_running; current_zone++) {
-                            zone = modules.get(current_zone);
-                            if(current_zone > 0) {
-                                skip_count += ((int) zone.getAddress() - 100) - ((int) modules.get(current_zone - 1).getAddress() - 100) - 1;
-                            }
-                            insertDevice(zone);
-                        }
-                    }
-
-                    //Additional delay to ensure final device is added
-                    Thread.sleep(DELAY);
-                }                        
-
-                if(SKIP_INSERT_DEVICES) {
-                    System.out.println("Skipping device insertion.");
-                }
-                
-                enterZoneList(zone_list);
-
-                System.out.println("Flexnet Entry Complete");
-                is_running = false;
-                System.exit(MAX_PRIORITY);
+            if(zone_list.CONTAINS_SPEAKERS) {
+                settings.add("Digital Audio and Digital Phone enabled");
             }
-            else {
-                System.out.println("Flexnet entry did not run");
+            if (zone_list.AP_START > 1) {
+                settings.add("AP Start to " + AP_START);
             }
         }
-        catch(Exception e) {
-            e.printStackTrace();
+        return settings;
+    }
+
+    protected void insertDevices(ZoneList zone_list) {
+        Zone zone;
+
+        //Add phones first if they exist
+
+        if(!phones.isEmpty()) {
+            zone = phones.get(0);
+            skip_count = (int) zone.getAddress() - 100 - 1;
+
+            for(int current_zone = 0; current_zone < phones.size() && is_running; current_zone++) {
+                zone = phones.get(current_zone);
+                if(current_zone > 0) {
+                    skip_count += (int) zone.getAddress() - (int) phones.get(current_zone - 1).getAddress() - 1;
+                }
+                insertAt(zone);
+            }
+        }
+
+        if(!sensors.isEmpty()) {
+            zone = sensors.get(0);
+            skip_count = (int) zone.getAddress() - AP_START;
+
+            for(int current_zone = 0; current_zone < sensors.size() && is_running; current_zone++) {
+                zone = sensors.get(current_zone);
+                if(current_zone > 0) {
+                    skip_count += (int) zone.getAddress() - (int) sensors.get(current_zone - 1).getAddress() - 1;
+                }
+                insertAt(zone);
+            }
+        }
+
+        if(!modules.isEmpty()) {
+            zone = modules.get(0);
+            skip_count = (int) zone.getAddress() - AP_START - 100;
+
+            for(int current_zone = 0; current_zone < modules.size() && is_running; current_zone++) {
+                zone = modules.get(current_zone);
+                if(current_zone > 0) {
+                    skip_count += ((int) zone.getAddress() - 100) - ((int) modules.get(current_zone - 1).getAddress() - 100) - 1;
+                }
+                insertAt(zone);
+            }
         }
     }
     
@@ -343,27 +296,24 @@ public class Flexnet extends ConfigBot{
     @Override
     protected void enterZoneList(ZoneList zone_list) {
         try {
-            if(!SKIP_INSERT_DEVICES) {
+            if(inserted_this_run) {
                 bot.pressKey(KeyEvent.VK_HOME, 1, 1); 
             }
             
             //Update phones first since they go at the very top
             for(Zone zone : phones) {
-                System.out.println("Updating: " + zone.getZoneinfo());
-                updateZone(zone);
+                updateAt(zone);
             }
 
             for(Zone zone : sensors) {
                 if(!zone.getType().equals("Blank Device")) {
-                    System.out.println("Updating: " + zone.getZoneinfo());
-                    updateZone(zone);
+                    updateAt(zone);
                 }
             }
 
             for(Zone zone : modules) {
                 if(!zone.getType().equals("Blank Device")) {
-                    System.out.println("Updating: " + zone.getZoneinfo());
-                    updateZone(zone);
+                    updateAt(zone);
                 }
             }
             
@@ -374,7 +324,7 @@ public class Flexnet extends ConfigBot{
     
     protected void updateType(Zone zone) {
         try {
-            Thread.sleep(DELAY);
+            stepPause();
             switch(zone.getType()) {
                 case "Photo Detector":
                     bot.pressKey(KeyEvent.VK_A);
