@@ -124,7 +124,6 @@ public class FX400 extends ConfigBot{
     }
 
     protected void insertDevice(Zone zone){
-        System.out.println("Inserting: " + zone.getZoneinfo());
         switch (zone.getType()) {
             case "Photo Detector":
                 //Duct detectors have spare

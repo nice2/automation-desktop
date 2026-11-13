@@ -259,7 +259,6 @@ public class FX4000 extends ConfigBot{
     }
 
     protected void insertDevice(Zone zone) {
-        System.out.println("Inserting: " + zone.getZoneinfo());
         switch (zone.getType()) {
             case "Photo Detector":
                 if (zone.isDualInput()) {
