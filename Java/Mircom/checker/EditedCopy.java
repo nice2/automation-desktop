@@ -1,15 +1,10 @@
 package checker;
 
 import java.awt.Component;
-import java.awt.FileDialog;
-import java.awt.Frame;
-import java.awt.Window;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Locale;
-
-import javax.swing.SwingUtilities;
 
 //Saves everything pending on one job version - correlation changes (Correlate tab) and ticked LED fixes (LEDs tab) -
 //into ONE new copy of the job file, loaded in the configurator with Import Job. The open file and the configurators'
@@ -47,16 +42,12 @@ public final class EditedCopy {
 
     //Asks where to save; null = cancelled. Starts next to the job file (Downloads for a configurator's own database).
     static File pickTarget(Component parent, Job job, String last_dir) {
-        Window owner = SwingUtilities.getWindowAncestor(parent);
-        FileDialog dialog = new FileDialog(owner instanceof Frame ? (Frame) owner : null, "Save the edited job as a new file", FileDialog.SAVE);
         boolean live = JobWriter.LIVE_DATABASES.contains(job.file);
         File dir = live ? new File(System.getProperty("user.home"), "Downloads") : job.file.getParentFile();
-        dialog.setDirectory(dir != null && dir.isDirectory() ? dir.getPath() : last_dir);
-        dialog.setFile(suggestedName(job));
-        dialog.setVisible(true);
-        if (dialog.getFile() == null) return null;
-        String name = dialog.getFile().toLowerCase(Locale.ROOT).endsWith(".mdb") ? dialog.getFile() : dialog.getFile() + ".mdb";
-        return new File(dialog.getDirectory(), name);
+        if ((dir == null || !dir.isDirectory()) && last_dir != null) dir = new File(last_dir);
+        File picked = WindowsFileDialog.save(parent, "Save the edited job as a new file", dir, suggestedName(job), "Configurator jobs", "mdb");
+        if (picked == null) return null;
+        return picked.getName().toLowerCase(Locale.ROOT).endsWith(".mdb") ? picked : new File(picked.getParentFile(), picked.getName() + ".mdb");
     }
 
     //e.g. "355 Exterior St_25-07 (edited).mdb"; an earlier "(edited)" / "(correlations edited)" / "(LEDs fixed)" is replaced

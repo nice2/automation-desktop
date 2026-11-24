@@ -4,11 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FileDialog;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
-import java.awt.Window;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -41,7 +39,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.RowSorter;
 import javax.swing.SortOrder;
-import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -660,13 +657,9 @@ public class CheckerPanel extends JPanel {
     }
 
     private void pickFile() {
-        Window owner = SwingUtilities.getWindowAncestor(this);
-        FileDialog dialog = new FileDialog(owner instanceof Frame ? (Frame) owner : null, "Open a configurator job (.mdb)", FileDialog.LOAD);
-        dialog.setDirectory(prefs.get("lastDir", new File(System.getProperty("user.home"), "Downloads").getPath()));
-        dialog.setFile("*.mdb");
-        dialog.setVisible(true);
-        if (dialog.getFile() == null) return;
-        File picked = new File(dialog.getDirectory(), dialog.getFile());
+        File dir = new File(prefs.get("lastDir", new File(System.getProperty("user.home"), "Downloads").getPath()));
+        File picked = WindowsFileDialog.open(this, "Open a configurator job (.mdb)", dir, "Configurator jobs", "mdb");
+        if (picked == null) return;
         prefs.put("lastDir", picked.getParent());
         openFile(picked);
     }
@@ -1529,14 +1522,10 @@ public class CheckerPanel extends JPanel {
     }
 
     private File saveDialog(String name) {
-        Window owner = SwingUtilities.getWindowAncestor(this);
-        FileDialog dialog = new FileDialog(owner instanceof Frame ? (Frame) owner : null, "Save as CSV", FileDialog.SAVE);
-        dialog.setDirectory(prefs.get("lastDir", System.getProperty("user.home")));
-        dialog.setFile(name.replaceAll("[\\\\/:*?\"<>|]", "_"));
-        dialog.setVisible(true);
-        if (dialog.getFile() == null) return null;
-        String file = dialog.getFile().toLowerCase(Locale.ROOT).endsWith(".csv") ? dialog.getFile() : dialog.getFile() + ".csv";
-        return new File(dialog.getDirectory(), file);
+        File dir = new File(prefs.get("lastDir", System.getProperty("user.home")));
+        File picked = WindowsFileDialog.save(this, "Save as CSV", dir, name.replaceAll("[\\\\/:*?\"<>|]", "_"), "CSV files", "csv");
+        if (picked == null) return null;
+        return picked.getName().toLowerCase(Locale.ROOT).endsWith(".csv") ? picked : new File(picked.getParentFile(), picked.getName() + ".csv");
     }
 
     //-------------------------------------------------------------------------------------------------

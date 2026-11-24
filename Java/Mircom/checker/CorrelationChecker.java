@@ -1,7 +1,5 @@
 package checker;
 
-import java.awt.FileDialog;
-import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.PrintStream;
@@ -164,15 +162,7 @@ public class CorrelationChecker {
 
     private static File browse() {
         if (GraphicsEnvironment.isHeadless()) return null;
-        Frame frame = new Frame();
-        try {
-            FileDialog dialog = new FileDialog(frame, "Pick a configurator job (.mdb) to check", FileDialog.LOAD);
-            dialog.setFile("*.mdb");
-            dialog.setVisible(true);
-            return dialog.getFile() == null ? null : new File(dialog.getDirectory(), dialog.getFile());
-        } finally {
-            frame.dispose();
-        }
+        return WindowsFileDialog.open(null, "Pick a configurator job (.mdb) to check", null, "Configurator jobs", "mdb");
     }
 
     private static void usage(PrintStream out) {

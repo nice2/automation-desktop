@@ -14,8 +14,8 @@ if errorlevel 1 (
     exit /b 2
 )
 if "%~1"=="" (
-    start "" javaw -cp "./dependencies/*;." checker.CheckerWindow
+    start "" javaw --enable-native-access=ALL-UNNAMED -cp "./dependencies/*;." checker.CheckerWindow
     exit /b 0
 )
-java -cp "./dependencies/*;." checker.CorrelationChecker %*
+java --enable-native-access=ALL-UNNAMED -cp "./dependencies/*;." checker.CorrelationChecker %*
 exit /b %ERRORLEVEL%
