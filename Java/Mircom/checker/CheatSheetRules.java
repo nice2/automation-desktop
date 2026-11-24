@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import checker.Job.Circuit;
 import checker.Job.Kind;
@@ -255,7 +256,9 @@ public final class CheatSheetRules {
             Map<Output, Integer> counts = new EnumMap<>(Output.class);
             List<Circuit> mains = new ArrayList<>(), alts = new ArrayList<>(), shaft_lights = new ArrayList<>();
             for (Circuit o : job.outputs.values()) {
-                if (o.isSpare() || o.kind == Kind.OUTPUT_ZONE) continue;
+                if (o.kind == Kind.OUTPUT_ZONE) continue;
+                if (isSignal(o)) noSupervisoryOnSignal(report, o, job.devicesReaching(o));
+                if (o.isSpare()) continue;
                 Output role = Roles.output(o);
                 counts.merge(role, 1, Integer::sum);
                 Set<Circuit> reach = job.devicesReaching(o);
@@ -265,7 +268,6 @@ public final class CheatSheetRules {
                         boolean strobe = o.process_type == 14 || o.words().toLowerCase().contains("strobe");
                         if (strobe && o.silenceable) report.warning(o, "Strobe circuit without NS").why(sheet("Checklist, Loop 0 - strobes are NS"));
                         need(report, o, reach, alarms, "alarm inputs", "Correlations - strobes correlate to all alarms");
-                        noSupervisory(report, o, reach, true, "Correlations - do not correlate any supervisory to strobes");
                         break;
                     case DOOR_RELEASE:
                         need(report, o, reach, automatic, "alarm inputs", "Correlations - door release gets all alarms");
@@ -414,6 +416,39 @@ public final class CheatSheetRules {
             String summary = missing.size() == required.size() ? "None of the " + required.size() + " " + what + " activate it"
                 : "Missing " + missing.size() + " of " + required.size() + " " + what;
             report.error(output, summary).items("Not activating it", missing).why(sheet(sheet));
+        }
+
+        //Signal and strobe circuits (the configurator's signal class), whatever their tag says: sync, signal silence
+        //and spare signals too, since a spare one sounds as soon as something is wired to it
+        static boolean isSignal(Circuit o) {
+            return o.corr_class == 8 || (o.corr_class < 0 && (o.process_type == 13 || o.process_type == 14));
+        }
+
+        private static final Pattern CO_SIGNAL = Pattern.compile("\\bco\\b|amber|carbon");
+        private static final Pattern SUPERVISORY_SIGNAL = Pattern.compile("supv|supervis");
+
+        //No supervisory input may set off a signal or strobe, on every panel. Left alone on purpose: sounder bases
+        //(in-unit combo smoke/CO detectors are set up as supervisory and sound their own base), CO detectors on CO
+        //(amber) strobes, and signals tagged as supervisory bells.
+        private static void noSupervisoryOnSignal(Report report, Circuit o, Set<Circuit> reach) {
+            if (Roles.output(o) == Output.SOUNDER) return;
+            String words = o.words().toLowerCase();
+            if (SUPERVISORY_SIGNAL.matcher(words).find()) return;
+            boolean co_signal = CO_SIGNAL.matcher(words).find();
+            List<Circuit> supv = new ArrayList<>();
+            for (Circuit c : reach) {
+                Family f = Roles.family(c);
+                if (f != Family.SUPERVISORY && f != Family.LATCHED) continue;
+                if (co_signal && Roles.device(c) == Device.CO) continue;
+                supv.add(c);
+            }
+            if (supv.isEmpty()) return;
+            String what = o.process_type == 14 ? "strobe" : "signal";
+            boolean spare = o.isSpare();
+            report.error(o, (spare ? "Spare " + what : Character.toUpperCase(what.charAt(0)) + what.substring(1)) + " activated by "
+                    + Report.plural(supv.size(), "supervisory input"))
+                .more(spare ? "It is spare now, but would sound on a supervisory as soon as something is wired to it." : "")
+                .items("Supervisory inputs", supv).why(sheet("Correlations - do not correlate any supervisory to strobes / signals"));
         }
 
         private static void noSupervisory(Report report, Circuit output, Set<Circuit> reach, boolean error, String sheet) {
