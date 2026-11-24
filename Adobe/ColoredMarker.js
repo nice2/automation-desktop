@@ -1,6 +1,7 @@
-var STARTING_NUMBER = 20; //Starting number for each color
+var STARTING_NUMBER = 1; //Starting number for each color
 var MARKER_SIZE = 18; //Text size of the created marking
 var USE_RECTANGLES = false; //Count rectangles instead of circles
+var SKIP_WHITE = true; // Skip white circles since they are harder to see
 // Press CTRL+J to open debugger, paste everything, CTRL+A to select all, CTRL+Enter to run
 
 //Get all colored circles and assign a number next to each of them
@@ -27,7 +28,7 @@ for (var i = 0; i < annots.length; i++) {
 //Go through each page, then each annotation per page, then add their markings
 for(var i = 0; i < pages.length; i++) {
     pages[i].forEach(function(annot) {
-        if(checkAnnotType(annot)) {
+        if(checkAnnotType(annot) && annot.fillColor && (SKIP_WHITE && !color.equal(annot.fillColor, color.white))) {
             if(color_count[annot.fillColor.toString()] == null) {
                 color_count[annot.fillColor.toString()] = STARTING_NUMBER;             
             }

@@ -3,3 +3,14 @@
 **/dependencies/*.dll
 **/\.vscode
 settings.ini
+*.env
+*.fsae
+
+# Python
+__pycache__/
+*.py[cod]
+
+# DMP: job exports (encrypted or decrypted) hold customer data, IPs and codes
+DMP/**/*.xml
+# DMP: local job files
+DMP/jobs/*
